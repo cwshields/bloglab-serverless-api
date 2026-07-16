@@ -1,0 +1,113 @@
+service: myserverlessproject
+
+provider:
+    name: aws
+    runtime: nodejs16.x
+    profile: serverlessUser
+    region: eu-west-1
+    environment:
+        USERS_TABLE: ${self:custom.usersTable}
+        JWT_SECRET: ${env:JWT_SECRET}
+    iam:
+        role:
+            statements:
+                - Effect: Allow
+                  Action:
+                      - dynamodb:GetItem
+                      - dynamodb:PutItem
+                      - dynamodb:Query
+                  Resource:
+                      - !GetAtt UsersTable.Arn
+                      - !Sub "${UsersTable.Arn}/index/*"
+
+plugins:
+    - serverless-s3-sync
+    - serverless-webpack
+
+package:
+    individually: true
+
+custom:
+    usersTable: myserverlessproject-users-${sls:stage}
+    s3Sync:
+        - bucketName: myserverlessprojectuploadbucket-768344
+          localDir: UploadData
+
+functions:
+    getUsers:
+        handler: lambdas/getUsers.handler
+        events:
+            - http:
+                path: get-users/
+                method: GET
+                cors: true
+    getBlogs:
+        handler: lambdas/getBlogs.handler
+        events:
+            - http:
+                path: get-blogs/
+                method: GET
+                cors: true
+    getListings:
+        handler: lambdas/getListings.handler
+        events:
+            - http:
+                path: get-listings/
+                method: GET
+                cors: true
+    getPodcasts:
+        handler: lambdas/getPodcasts.handler
+        events:
+            - http:
+                path: get-podcasts/
+                method: GET
+                cors: true
+    register:
+        handler: lambdas/register.handler
+        events:
+            - http:
+                path: register/
+                method: POST
+                cors: true
+    login:
+        handler: lambdas/login.handler
+        events:
+            - http:
+                path: login/
+                method: POST
+                cors: true
+
+resources:
+    Resources:
+        DemoBucketUpload:
+            Type: AWS::S3::Bucket
+            Properties:
+                BucketName: myserverlessprojectuploadbucket-768344
+        UsersTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+                TableName: ${self:custom.usersTable}
+                BillingMode: PAY_PER_REQUEST
+                AttributeDefinitions:
+                    - AttributeName: id
+                      AttributeType: S
+                    - AttributeName: email
+                      AttributeType: S
+                    - AttributeName: username
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: id
+                      KeyType: HASH
+                GlobalSecondaryIndexes:
+                    - IndexName: EmailIndex
+                      KeySchema:
+                          - AttributeName: email
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
+                    - IndexName: UsernameIndex
+                      KeySchema:
+                          - AttributeName: username
+                            KeyType: HASH
+                      Projection:
+                          ProjectionType: ALL
