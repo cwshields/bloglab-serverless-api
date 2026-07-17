@@ -36,6 +36,8 @@ const demoAccounts = [
     password: "1234",
     avatar: "https://i.pravatar.cc/50?img=51",
     is_admin: true,
+    is_employee: true,
+    joined_date: "Jan 29, 2023",
   },
   {
     id: "demo-employee-mpirouet1",
@@ -45,7 +47,9 @@ const demoAccounts = [
     email: "mpirouet1@bloglab.dev",
     password: "1234",
     avatar: "https://i.pravatar.cc/50?img=11",
+    is_admin: false,
     is_employee: true,
+    joined_date: "Mar 19, 2024",  
   },
   {
     id: "demo-customer-mhewertsonl",
@@ -54,7 +58,10 @@ const demoAccounts = [
     username: "mhewertsonl",
     email: "mhewertsonl@bloglab.dev",
     password: "1234",
+    is_admin: false,
+    is_employee: false,
     avatar: "https://i.pravatar.cc/50?img=35",
+    joined_date: "Feb 7, 2024",
   },
 ];
 
