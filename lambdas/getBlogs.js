@@ -1,37 +1,33 @@
 const Responses = require("./API_Responses");
-const { blogs } = require('./blogs')
-const { blogComments } = require('./blogComments')
-const users = require('./users')
+const { getAllBlogs, getCommentsByBlogIds } = require("./blogsRepo");
+const { getUsersByIds } = require("./usersRepo");
 
 exports.handler = async (event) => {
-  console.log("event", event);
+  try {
+    const blogs = await getAllBlogs();
+    const commentsByBlogId = await getCommentsByBlogIds(blogs.map((post) => post.id));
+    const allComments = [...commentsByBlogId.values()].flat();
 
-  // if (!event.pathParameters || !event.pathParameters.ID) {
-  //   // failed without an ID
-  //   return Responses._400({ message: "missing the ID from the path" });
-  // }
+    const usersById = await getUsersByIds([
+      ...blogs.map((post) => post.userId),
+      ...allComments.map((comment) => comment.userId),
+    ]);
 
-  // let ID = event.pathParameters.ID;
-
-  if (blogs/*[ID]*/) {
-    // return the blogs, hydrated with the author's current user info
     const hydrated = blogs.map(({ userId, ...post }) => {
-      const user = users.find((u) => u.id === userId);
-      const comments = blogComments
-        .filter((c) => c.blogId === post.id)
-        .map(({ userId: commentUserId, ...comment }) => {
-          const commentUser = users.find((u) => u.id === commentUserId);
-          return {
-            ...comment,
-            user: commentUser
-              ? {
-                  firstName: commentUser.firstName,
-                  lastName: commentUser.lastName,
-                  avatar: commentUser.avatar,
-                }
-              : null,
-          };
-        });
+      const user = usersById.get(userId);
+      const comments = (commentsByBlogId.get(post.id) || []).map(({ userId: commentUserId, ...comment }) => {
+        const commentUser = usersById.get(commentUserId);
+        return {
+          ...comment,
+          user: commentUser
+            ? {
+                firstName: commentUser.firstName,
+                lastName: commentUser.lastName,
+                avatar: commentUser.avatar,
+              }
+            : null,
+        };
+      });
       return {
         ...post,
         comments,
@@ -49,16 +45,10 @@ exports.handler = async (event) => {
           : null,
       };
     });
-    return Responses._200(hydrated/*[ID]*/);
+
+    return Responses._200(hydrated);
+  } catch (err) {
+    console.error("getBlogs error", err);
+    return Responses._500({ message: "failed to get blogs" });
   }
-
-  // if () {
-
-  // } else {
-
-  // }
-
-  // failed as ID not in the blogs
-  return Responses._400({ message: "no ID in blogs" });
 };
-

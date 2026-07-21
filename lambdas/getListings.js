@@ -1,27 +1,14 @@
 const Responses = require("./API_Responses");
-const listings = require("./listings");
+const { scanAll } = require("./dynamoUtil");
+
+const LISTINGS_TABLE = process.env.LISTINGS_TABLE;
 
 exports.handler = async (event) => {
-  console.log("event", event);
-
-  //   if (!event.pathParameters || !event.pathParameters.ID) {
-  //     // failed without an ID
-  //     return Responses._400({ message: "missing the ID from the path" });
-  //   }
-
-  //   let ID = event.pathParameters.ID;
-
-  if (listings /*[ID]*/) {
-    // return the listings
-    return Responses._200(listings /*[ID]*/);
+  try {
+    const listings = await scanAll(LISTINGS_TABLE);
+    return Responses._200(listings);
+  } catch (err) {
+    console.error("getListings error", err);
+    return Responses._500({ message: "failed to get listings" });
   }
-
-  // if () {
-
-  // } else {
-
-  // }
-
-  // failed as ID not in the listings
-  return Responses._400({ message: "no ID in listings" });
 };

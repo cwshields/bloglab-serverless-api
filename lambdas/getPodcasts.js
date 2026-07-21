@@ -1,50 +1,39 @@
 const Responses = require("./API_Responses");
-const { podcasts } = require("./podcasts");
-const { podcastComments } = require("./podcastComments");
-const users = require("./users");
+const { getAllPodcasts, getCommentsByEpisodeIds } = require("./podcastsRepo");
+const { getUsersByIds } = require("./usersRepo");
 
 exports.handler = async (event) => {
-  console.log("event", event);
+  try {
+    const podcasts = await getAllPodcasts();
+    const episodeIds = podcasts.flatMap((podcast) => podcast.episodes.map((episode) => episode.id));
+    const commentsByEpisodeId = await getCommentsByEpisodeIds(episodeIds);
+    const allComments = [...commentsByEpisodeId.values()].flat();
 
-  //   if (!event.pathParameters || !event.pathParameters.ID) {
-  //     // failed without an ID
-  //     return Responses._400({ message: "missing the ID from the path" });
-  //   }
+    const usersById = await getUsersByIds(allComments.map((comment) => comment.userId));
 
-  //   let ID = event.pathParameters.ID;
-
-  if (podcasts /*[ID]*/) {
-    // return the podcasts, hydrating each episode with its comments and each comment's author
     const hydrated = podcasts.map((podcast) => ({
       ...podcast,
       episodes: podcast.episodes.map((episode) => ({
         ...episode,
-        comments: podcastComments
-          .filter((c) => c.episodeId === episode.id)
-          .map(({ userId, ...comment }) => {
-            const user = users.find((u) => u.id === userId);
-            return {
-              ...comment,
-              user: user
-                ? {
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    avatar: user.avatar,
-                  }
-                : null,
-            };
-          }),
+        comments: (commentsByEpisodeId.get(episode.id) || []).map(({ userId, ...comment }) => {
+          const user = usersById.get(userId);
+          return {
+            ...comment,
+            user: user
+              ? {
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  avatar: user.avatar,
+                }
+              : null,
+          };
+        }),
       })),
     }));
-    return Responses._200(hydrated /*[ID]*/);
+
+    return Responses._200(hydrated);
+  } catch (err) {
+    console.error("getPodcasts error", err);
+    return Responses._500({ message: "failed to get podcasts" });
   }
-
-  // if () {
-
-  // } else {
-
-  // }
-
-  // failed as ID not in the podcasts
-  return Responses._400({ message: "no ID in podcasts" });
 };
