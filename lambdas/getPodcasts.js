@@ -1,9 +1,11 @@
 const Responses = require("./API_Responses");
 const { getAllPodcasts, getCommentsByEpisodeIds } = require("./podcastsRepo");
 const { getUsersByIds } = require("./usersRepo");
+const { getUserIdFromEvent } = require("./auth");
 
 exports.handler = async (event) => {
   try {
+    const viewerId = getUserIdFromEvent(event);
     const podcasts = await getAllPodcasts();
     const episodeIds = podcasts.flatMap((podcast) => podcast.episodes.map((episode) => episode.id));
     const commentsByEpisodeId = await getCommentsByEpisodeIds(episodeIds);
@@ -19,6 +21,7 @@ exports.handler = async (event) => {
           const user = usersById.get(userId);
           return {
             ...comment,
+            isOwnComment: viewerId != null && userId === viewerId,
             user: user
               ? {
                   firstName: user.firstName,

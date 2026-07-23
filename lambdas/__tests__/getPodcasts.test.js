@@ -1,3 +1,5 @@
+process.env.JWT_SECRET = "test-secret";
+
 const mockCommentsByEpisodeId = new Map([
   [10, [{ id: 200, episodeId: 10, userId: "user-1", body: "Great episode!" }]],
   [11, [{ id: 201, episodeId: 11, userId: "no-such-user", body: "From a deleted user" }]],
@@ -27,6 +29,7 @@ jest.mock("../usersRepo", () => ({
   getUsersByIds: jest.fn(() => Promise.resolve(mockUsersById)),
 }));
 
+const auth = require("../auth");
 const { handler } = require("../getPodcasts");
 
 describe("getPodcasts handler", () => {
@@ -42,6 +45,19 @@ describe("getPodcasts handler", () => {
 
     expect(secondEpisode.comments).toHaveLength(1);
     expect(secondEpisode.comments[0].user).toBeNull();
+  });
+
+  test("marks isOwnComment true only for the requesting viewer's own comments", async () => {
+    const token = auth.signToken({ id: "user-1", email: "a@b.com", username: "abee" });
+
+    const anonymous = JSON.parse((await handler({})).body);
+    expect(anonymous[0].episodes[0].comments[0].isOwnComment).toBe(false);
+
+    const asUser1 = JSON.parse(
+      (await handler({ headers: { Authorization: `Bearer ${token}` } })).body
+    );
+    expect(asUser1[0].episodes[0].comments[0].isOwnComment).toBe(true);
+    expect(asUser1[0].episodes[1].comments[0].isOwnComment).toBe(false);
   });
 
   test("never leaks raw userId into the response", async () => {

@@ -1,9 +1,11 @@
 const Responses = require("./API_Responses");
 const { getAllBlogs, getCommentsByBlogIds } = require("./blogsRepo");
 const { getUsersByIds } = require("./usersRepo");
+const { getUserIdFromEvent } = require("./auth");
 
 exports.handler = async (event) => {
   try {
+    const viewerId = getUserIdFromEvent(event);
     const blogs = await getAllBlogs();
     const commentsByBlogId = await getCommentsByBlogIds(blogs.map((post) => post.id));
     const allComments = [...commentsByBlogId.values()].flat();
@@ -19,6 +21,7 @@ exports.handler = async (event) => {
         const commentUser = usersById.get(commentUserId);
         return {
           ...comment,
+          isOwnComment: viewerId != null && commentUserId === viewerId,
           user: commentUser
             ? {
                 firstName: commentUser.firstName,
