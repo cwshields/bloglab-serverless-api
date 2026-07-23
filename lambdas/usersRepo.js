@@ -62,4 +62,20 @@ async function getUsersByIds(ids) {
   return usersById;
 }
 
-module.exports = { getUsersByIds };
+// Looks up the current is_admin flag from Dynamo rather than trusting a
+// (potentially stale, up to 7 days old) claim baked into the JWT.
+async function isUserAdmin(userId) {
+  if (!userId) return false;
+
+  const result = await dynamo
+    .get({
+      TableName: TABLE,
+      Key: { id: userId },
+      ProjectionExpression: "is_admin",
+    })
+    .promise();
+
+  return Boolean(result.Item?.is_admin);
+}
+
+module.exports = { getUsersByIds, isUserAdmin };

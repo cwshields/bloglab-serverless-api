@@ -43,4 +43,34 @@ describe("auth", () => {
     expect(publicUser).toEqual({ id: "u1", email: "a@b.com" });
     expect(publicUser.password).toBeUndefined();
   });
+
+  describe("getUserIdFromEvent", () => {
+    test("returns the token's subject for a valid Bearer token", () => {
+      const token = auth.signToken({ id: "u1", email: "a@b.com", username: "abee" });
+
+      expect(auth.getUserIdFromEvent({ headers: { Authorization: `Bearer ${token}` } })).toBe("u1");
+    });
+
+    test("is case-insensitive to the header name", () => {
+      const token = auth.signToken({ id: "u1", email: "a@b.com", username: "abee" });
+
+      expect(auth.getUserIdFromEvent({ headers: { authorization: `Bearer ${token}` } })).toBe("u1");
+    });
+
+    test("returns null when there is no headers object", () => {
+      expect(auth.getUserIdFromEvent({})).toBeNull();
+    });
+
+    test("returns null when the header is missing the Bearer prefix", () => {
+      const token = auth.signToken({ id: "u1", email: "a@b.com", username: "abee" });
+
+      expect(auth.getUserIdFromEvent({ headers: { Authorization: token } })).toBeNull();
+    });
+
+    test("returns null for a token signed with a different secret", () => {
+      const token = jwt.sign({ sub: "u1" }, "wrong-secret");
+
+      expect(auth.getUserIdFromEvent({ headers: { Authorization: `Bearer ${token}` } })).toBeNull();
+    });
+  });
 });

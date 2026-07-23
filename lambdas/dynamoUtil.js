@@ -21,4 +21,10 @@ async function scanAll(tableName) {
   return items;
 }
 
-module.exports = { dynamo, scanAll };
+// Comment tables key on a numeric id with no auto-increment in DynamoDB;
+// millisecond timestamp + random suffix keeps ids ordered and collision-free.
+function generateNumericId() {
+  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+}
+
+module.exports = { dynamo, scanAll, generateNumericId };
