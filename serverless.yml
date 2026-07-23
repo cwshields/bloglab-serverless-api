@@ -21,6 +21,8 @@ provider:
                       - dynamodb:GetItem
                       - dynamodb:BatchGetItem
                       - dynamodb:PutItem
+                      - dynamodb:DeleteItem
+                      - dynamodb:UpdateItem
                       - dynamodb:Query
                       - dynamodb:Scan
                   Resource:
@@ -76,6 +78,48 @@ functions:
             - http:
                 path: get-podcasts/
                 method: GET
+                cors: true
+    postBlogComment:
+        handler: lambdas/postBlogComment.handler
+        events:
+            - http:
+                path: post-blog-comment/
+                method: POST
+                cors: true
+    postPodcastComment:
+        handler: lambdas/postPodcastComment.handler
+        events:
+            - http:
+                path: post-podcast-comment/
+                method: POST
+                cors: true
+    deleteBlogComment:
+        handler: lambdas/deleteBlogComment.handler
+        events:
+            - http:
+                path: delete-blog-comment/{commentId}
+                method: DELETE
+                cors: true
+    deletePodcastComment:
+        handler: lambdas/deletePodcastComment.handler
+        events:
+            - http:
+                path: delete-podcast-comment/{commentId}
+                method: DELETE
+                cors: true
+    editBlogComment:
+        handler: lambdas/editBlogComment.handler
+        events:
+            - http:
+                path: edit-blog-comment/{commentId}
+                method: PATCH
+                cors: true
+    editPodcastComment:
+        handler: lambdas/editPodcastComment.handler
+        events:
+            - http:
+                path: edit-podcast-comment/{commentId}
+                method: PATCH
                 cors: true
     register:
         handler: lambdas/register.handler
